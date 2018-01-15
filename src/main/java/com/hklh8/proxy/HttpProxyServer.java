@@ -24,7 +24,7 @@ public final class HttpProxyServer {
 //                    .handler(new LoggingHandler(LogLevel.ERROR))//连接日志
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        public void initChannel(SocketChannel ch) throws Exception {
+                        protected void initChannel(SocketChannel ch) throws Exception {
                             ch.pipeline().addLast(
 //                                  new LoggingHandler(LogLevel.ERROR),//报文日志
                                     new HttpServerCodec(),
