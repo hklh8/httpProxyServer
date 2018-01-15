@@ -9,16 +9,20 @@ import io.netty.handler.codec.http.HttpClientCodec;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 
+import java.net.InetSocketAddress;
+
 public class HttpProxyFrontendHandler extends ChannelInboundHandlerAdapter {
 
     private final String remoteHost;
     private final int remotePort;
+    private final int proxyPort;
 
     private Channel outboundChannel;
 
-    public HttpProxyFrontendHandler(String remoteHost, int remotePort) {
+    public HttpProxyFrontendHandler(String remoteHost, int remotePort, int proxyPort) {
         this.remoteHost = remoteHost;
         this.remotePort = remotePort;
+        this.proxyPort = proxyPort;
     }
 
     @Override
@@ -27,20 +31,20 @@ public class HttpProxyFrontendHandler extends ChannelInboundHandlerAdapter {
 
         // Start the connection attempt.
         Bootstrap b = new Bootstrap();
-        b.group(inboundChannel.eventLoop())
-                .channel(ctx.channel().getClass())
-                .handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel ch) throws Exception {
-                        ch.pipeline().addLast(
-                                new HttpClientCodec(),
-                                new HttpObjectAggregator(1024 * 1024 * 64),
-                                new HttpProxyBackendHandler(inboundChannel)
-                        );
-                    }
-                })
-                .option(ChannelOption.AUTO_READ, false);
-        ChannelFuture f = b.connect(remoteHost, remotePort);
+        b.group(inboundChannel.eventLoop());
+        b.channel(ctx.channel().getClass());
+        b.handler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            protected void initChannel(SocketChannel ch) throws Exception {
+                ch.pipeline().addLast(
+                        new HttpClientCodec(),
+                        new HttpObjectAggregator(1024 * 1024 * 64),
+                        new HttpProxyBackendHandler(inboundChannel)
+                );
+            }
+        });
+        b.option(ChannelOption.AUTO_READ, false);
+        ChannelFuture f = b.connect(new InetSocketAddress(remoteHost, remotePort), new InetSocketAddress(proxyPort));
         outboundChannel = f.channel();
         f.addListener((ChannelFutureListener) future -> {
             if (future.isSuccess()) {

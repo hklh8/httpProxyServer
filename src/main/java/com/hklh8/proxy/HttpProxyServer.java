@@ -12,7 +12,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 
 public final class HttpProxyServer {
 
-    public void start(int localPort, String remoteHost, int remotePort) throws Exception {
+    public void start(int localPort, String remoteHost, int remotePort, int proxyPort) throws Exception {
         System.out.println("Proxying *:" + localPort + " to " + remoteHost + ':' + remotePort + " ...");
 
         EventLoopGroup bossGroup = new NioEventLoopGroup(1);
@@ -29,7 +29,7 @@ public final class HttpProxyServer {
 //                                  new LoggingHandler(LogLevel.ERROR),//报文日志
                                     new HttpServerCodec(),
                                     new HttpObjectAggregator(1024 * 1024 * 64),
-                                    new HttpProxyFrontendHandler(remoteHost, remotePort)
+                                    new HttpProxyFrontendHandler(remoteHost, remotePort, proxyPort)
                             );
                         }
                     })
